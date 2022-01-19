@@ -20,10 +20,22 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
-		"languages": [{
-			"id": "parsley",
-			"extensions": [ ".ply" ]
-		}],
+		"languages": [
+			{
+				"id": "parsley",
+				"extensions": [
+					".ply"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "parsley",
+				"scopeName": "source.ply",
+				"path": "./syntaxes/parsley.tmLanguage.json"
+			}
+		],
 		"configuration": {
 			"type": "object",
 			"title": "Example configuration",

@@ -1,0 +1,152 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Parsley",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#blocks"
+		},
+		{
+			"include": "#varianttypes"
+		},
+		{
+			"include": "#nonterminals"
+		},
+		{
+			"include": "#variables"
+		}
+	],
+	"repository": {
+		"comments": {
+			"match": "//.*",
+			"name": "comment.line.double-slash"
+		},
+		"blocks": {
+			"patterns": [
+				{
+					"match": "(type) (.*) = \\{",
+					"captures": {
+						"1": {
+							"name": "entity.name.section"
+						},
+						"2": {
+							"name": "entity.name.type"
+						}
+					}
+				},
+				{
+					"name": "entity.name.section",
+					"match": "\\bformat\\b"
+				}
+			]
+		},
+		"strings": {
+			"name": "string.quoted.double.parsley",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.parsley",
+					"match": "\\\\."
+				}
+			]
+		},
+		"nonterminals": {
+			"patterns": [
+				{
+					"name": "support.type",
+					"match": "\\b(int|byte|bit|bool|endian|Byte|AsciiChar|HexChar|AlphaNum|Digit|AsciiCharS|HexCharS|HexCharS|DigitS|Int8|UInt8|Int16|UInt16|Int32|Int32|Int64|UInt64)\\b"
+				},
+				{
+					"match": "([A-Za-z_][\\w]*)\\s*([a-zA-Z_][\\w]*)\\s*\\{.*\\}",
+					"captures": {
+						"1": {
+							"name": "entity.name.tag"
+						},
+						"2": {
+							"name": "variable"
+						}
+					}
+				}
+			]
+		},
+		"operators": {
+			"name": "keyword.operator",
+			"match": "(-|\\!|~|\\+|/|\\*|<|>|&&|\\|\\||\\|_b|&_b|=|\\:=)"
+		},
+		"varianttypes": {
+			"patterns": [
+				{
+					"match": "(endian)\\:\\:(Big|Little)\\(\\)",
+					"captures": {
+						"1": {
+							"name": "support.type"
+						},
+						"2": {
+							"name": "support.function"
+						}
+					}
+				},
+				{
+					"match": "(option)\\:\\:(Some|None)\\(.*\\)",
+					"captures": {
+						"1": {
+							"name": "support.type"
+						},
+						"2": {
+							"name": "support.function"
+						}
+					}
+				},
+				{
+					"match": "(bool)\\:\\:(True|False)\\(\\)",
+					"captures": {
+						"1": {
+							"name": "support.type"
+						},
+						"2": {
+							"name": "support.function"
+						}
+					}
+				},
+				{
+					"match": "(bit)\\:\\:(One|Zero)\\(\\)",
+					"captures": {
+						"1": {
+							"name": "support.type"
+						},
+						"2": {
+							"name": "support.function"
+						}
+					}
+				}
+			]
+		},
+		"variables": {
+			"patterns": [
+				{
+					"match": ":= ([A-Za-z_][\\w]*)",
+					"captures": {
+						"1": {
+							"name": "variable"
+						}
+					}
+				},
+				{
+					"match": "(?:([A-Za-z_][\\w]*)[\\.]?)",
+					"captures": {
+						"1": {
+							"name": "variable"
+						}
+					}
+				}
+			]
+		}
+	},
+	"scopeName": "source.ply"
+}
