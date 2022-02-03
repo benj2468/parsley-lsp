@@ -3,37 +3,38 @@ import * as url from "url";
 import { Diagnostic, _Connection } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-async function executeTypeChecker(filename: string): Promise<string> {
+async function executeTypeChecker(
+  filename: string
+): Promise<string | undefined> {
   return new Promise((resolve, reject) => {
-    child.exec(`parsleyc ${filename}`, (err, data) => {
+    child.exec(`parsleyc.exe -json ${filename}`, (err, data) => {
       if (err) {
         resolve(err.message);
       }
-      resolve(data);
+      resolve(undefined);
     });
   });
 }
 
 function parseParsleyResponse(response: string): Diagnostic | undefined {
-  const re = /File ".*", line (\d+), character (\d+): ((.|\n)*)/;
+  const data = response.split("\n")[1];
+  const error = JSON.parse(data);
 
-  const data = response.match(re);
+  if (error) {
+    const { lnum, bol, cnum } = error;
 
-  if (data) {
-    const line = Number.parseInt(data[1]);
-    const character = Number.parseInt(data[2]);
-    const message = data[3];
+    const character = cnum - bol;
 
     return {
-      message,
+      message: response,
       range: {
         start: {
           character,
-          line,
+          line: lnum - 2,
         },
         end: {
-          character,
-          line,
+          character: character + 1,
+          line: lnum - 2,
         },
       },
     };
@@ -47,10 +48,12 @@ export function validateTextDocument(connection: _Connection) {
 
     if (file) {
       const result = await executeTypeChecker(file);
-      const diagnostic = parseParsleyResponse(result);
+      if (result) {
+        const diagnostic = parseParsleyResponse(result);
 
-      if (diagnostic) {
-        diagnostics.push(diagnostic);
+        if (diagnostic) {
+          diagnostics.push(diagnostic);
+        }
       }
     }
 
