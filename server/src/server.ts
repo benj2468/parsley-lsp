@@ -5,13 +5,11 @@
 import {
   createConnection,
   TextDocuments,
-  Diagnostic,
   ProposedFeatures,
   InitializeParams,
   DidChangeConfigurationNotification,
   TextDocumentSyncKind,
   InitializeResult,
-  DocumentHighlightParams,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";

@@ -3,10 +3,10 @@
 	"name": "Parsley",
 	"patterns": [
 		{
-			"include": "#comments"
+			"include": "#constants"
 		},
 		{
-			"include": "#strings"
+			"include": "#comments"
 		},
 		{
 			"include": "#blocks"
@@ -32,7 +32,7 @@
 					"match": "(type) (.*) = \\{",
 					"captures": {
 						"1": {
-							"name": "entity.name.section"
+							"name": "keyword.control"
 						},
 						"2": {
 							"name": "entity.name.type"
@@ -40,19 +40,51 @@
 					}
 				},
 				{
-					"name": "entity.name.section",
+					"name": "keyword.control",
 					"match": "\\bformat\\b"
+				},
+				{
+					"match": "[\\s]+(\\[)(.*)(\\])",
+					"captures": {
+						"1": {
+							"name": "invalid"
+						},
+						"2": {
+							"patterns": [
+								{
+									"include": "#constants"
+								},
+								{
+									"include": "#variables"
+								},
+								{
+									"include": "#nonterminals"
+								}
+							]
+						},
+						"3": {
+							"name": "invalid"
+						}
+					}
 				}
 			]
 		},
-		"strings": {
-			"name": "string.quoted.double.parsley",
-			"begin": "\"",
-			"end": "\"",
+		"constants": {
 			"patterns": [
 				{
-					"name": "constant.character.escape.parsley",
-					"match": "\\\\."
+					"name": "constant.numeric",
+					"match": "\\d"
+				},
+				{
+					"name": "string.quoted.double.parsley",
+					"begin": "\"",
+					"end": "\"",
+					"patterns": [
+						{
+							"name": "constant.character.escape.parsley",
+							"match": "\\\\."
+						}
+					]
 				}
 			]
 		},
@@ -63,7 +95,7 @@
 					"match": "\\b(int|byte|bit|bool|endian|Byte|AsciiChar|HexChar|AlphaNum|Digit|AsciiCharS|HexCharS|HexCharS|DigitS|Int8|UInt8|Int16|UInt16|Int32|Int32|Int64|UInt64)\\b"
 				},
 				{
-					"match": "([A-Za-z_][\\w]*)\\s*([a-zA-Z_][\\w]*)\\s*\\{.*\\}",
+					"match": "([A-Za-z_][\\w]*)\\s([A-Za-z_][\\w]*)",
 					"captures": {
 						"1": {
 							"name": "entity.name.tag"
@@ -130,7 +162,18 @@
 		"variables": {
 			"patterns": [
 				{
-					"match": ":= ([A-Za-z_][\\w]*)",
+					"match": "([A-Za-z_][\\w]*):[\\s]*(\\w*)",
+					"captures": {
+						"1": {
+							"name": "entity.other.attribute-name"
+						},
+						"2": {
+							"name": "entity.name.type"
+						}
+					}
+				},
+				{
+					"match": "([A-Za-z_][\\w]*)",
 					"captures": {
 						"1": {
 							"name": "variable"
@@ -138,10 +181,10 @@
 					}
 				},
 				{
-					"match": "(?:([A-Za-z_][\\w]*)[\\.]?)",
+					"match": "(?:[\\.]([A-Za-z_][\\w]*))",
 					"captures": {
 						"1": {
-							"name": "variable"
+							"name": "entity.other.attribute-name"
 						}
 					}
 				}
