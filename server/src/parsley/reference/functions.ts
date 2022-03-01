@@ -14,23 +14,24 @@ export const foo = () => {
 export function goToFile(documents: TextDocuments<TextDocument>) {
   return ({ textDocument, position }: DefinitionParams): Location[] => {
     const doc = documents.get(textDocument.uri);
-    const seeking = Object.keys(
-      utils.parseImports(
-        doc?.getText({
-          start: {
-            line: position.line,
-            character: 0,
-          },
-          end: {
-            line: position.line,
-            character: Infinity,
-          },
-        }) || ""
-      )
+    const seeking = utils.parseImports(
+      doc?.getText({
+        start: {
+          line: position.line,
+          character: 0,
+        },
+        end: {
+          line: position.line,
+          character: Infinity,
+        },
+      }) || "",
+      position.line
     );
 
-    if (seeking.length) {
-      const fileName = seeking[0];
+    const keys = Object.keys(seeking);
+
+    if (keys.length && utils.positionInRange(position, seeking[keys[0]])) {
+      const fileName = keys[0];
       const uri = path.join(path.dirname(textDocument.uri), `${fileName}.ply`);
       return [
         {
