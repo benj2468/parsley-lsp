@@ -50,6 +50,7 @@ connection.onInitialize((params: InitializeParams) => {
       completionProvider: {
         resolveProvider: true,
       },
+      definitionProvider: true,
     },
   };
   if (hasWorkspaceFolderCapability) {
@@ -102,7 +103,12 @@ connection.onDidChangeConfiguration((change) => {
   }
 
   // Revalidate all open text documents
-  documents.all().forEach(parsley.typeChecker.validateTextDocument(connection));
+  documents.all().forEach((doc) => {
+    parsley.typeChecker.validateTextDocument(connection)(
+      doc.uri,
+      doc.getText()
+    );
+  });
 });
 
 // Only keep settings for open documents
@@ -110,14 +116,26 @@ documents.onDidClose((e) => {
   documentSettings.delete(e.document.uri);
 });
 
-documents.onDidSave((change) => {
-  parsley.typeChecker.validateTextDocument(connection)(change.document);
+documents.onDidSave(async (change) => {
+  parsley.typeChecker.validateTextDocument(connection)(
+    change.document.uri,
+    change.document.getText()
+  );
+});
+
+documents.onDidChangeContent((change) => {
+  parsley.typeChecker.validateTextDocument(connection)(
+    change.document.uri,
+    change.document.getText()
+  );
 });
 
 connection.onDidChangeWatchedFiles((_change) => {
   // Monitored files have change in VSCode
   connection.console.log("We received an file change event");
 });
+
+connection.onDefinition(parsley.reference.goToFile(documents));
 
 // Completion
 

@@ -1,23 +1,8 @@
 import * as child from "child_process";
 import * as url from "url";
-import {
-  Diagnostic,
-  Position,
-  Range,
-  _Connection,
-} from "vscode-languageserver";
-import { TextDocument } from "vscode-languageserver-textdocument";
-
-const GHOST_RANGE: Range = {
-  start: {
-    character: 0,
-    line: 0,
-  },
-  end: {
-    character: 1,
-    line: 0,
-  },
-};
+import * as path from "path";
+import { Diagnostic, Position, _Connection } from "vscode-languageserver";
+import * as utils from "../utils";
 
 type ErrLocation = {
   fname: string;
@@ -53,15 +38,28 @@ function convertToPosition(errLocation: ErrLocation): Position {
   };
 }
 
-function parseParsleyResponse(response: string): Diagnostic | undefined {
+function parseParsleyResponse(
+  file: string,
+  imports: utils.Imports,
+  response: string
+): Diagnostic | undefined {
   const data = response.split("\n")[1];
   const error: ErrMessage = JSON.parse(data);
 
   if (error) {
     const { errm_start, errm_end, errm_reason, errm_ghost } = error;
 
+    if (errm_start.fname !== file) {
+      const file = path.parse(errm_start.fname);
+
+      return {
+        message: `Error in file: ${errm_start.fname} : ${errm_reason}`,
+        range: imports[file.name],
+      };
+    }
+
     return errm_ghost
-      ? { message: errm_reason, range: GHOST_RANGE }
+      ? { message: errm_reason, range: utils.GHOST_RANGE }
       : {
           message: errm_reason,
           range: {
@@ -73,21 +71,23 @@ function parseParsleyResponse(response: string): Diagnostic | undefined {
 }
 
 export function validateTextDocument(connection: _Connection) {
-  return async ({ uri }: TextDocument): Promise<void> => {
+  return (uri: string, text: string) => {
     const file = url.parse(uri).pathname;
     const diagnostics: Diagnostic[] = [];
 
+    const imports = utils.parseImports(text);
+
     if (file) {
-      const result = await executeTypeChecker(file);
-      if (result) {
-        const diagnostic = parseParsleyResponse(result);
+      executeTypeChecker(file).then((result) => {
+        if (result) {
+          const diagnostic = parseParsleyResponse(file, imports, result);
 
-        if (diagnostic) {
-          diagnostics.push(diagnostic);
+          if (diagnostic) {
+            diagnostics.push(diagnostic);
+          }
         }
-      }
+        connection.sendDiagnostics({ uri, diagnostics });
+      });
     }
-
-    connection.sendDiagnostics({ uri, diagnostics });
   };
 }
