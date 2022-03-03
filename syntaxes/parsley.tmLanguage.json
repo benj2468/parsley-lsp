@@ -92,7 +92,11 @@
 			"patterns": [
 				{
 					"name": "support.type",
-					"match": "\\b(int|byte|bit|bool|endian|Byte|AsciiChar|HexChar|AlphaNum|Digit|AsciiCharS|HexCharS|HexCharS|DigitS|Int8|UInt8|Int16|UInt16|Int32|Int32|Int64|UInt64)\\b"
+					"match": "\\b[A-Z]\\w*\\b"
+				},
+				{
+					"name": "support.type",
+					"match": "\\b(int|byte|bit|bool|endian)\\b"
 				},
 				{
 					"match": "([A-Za-z_][\\w]*)\\s([A-Za-z_][\\w]*)",

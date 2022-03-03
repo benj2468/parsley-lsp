@@ -135,7 +135,7 @@ connection.onDidChangeWatchedFiles((_change) => {
   connection.console.log("We received an file change event");
 });
 
-connection.onDefinition(parsley.reference.goToFile(documents));
+connection.onDefinition(parsley.definition.handler(documents));
 
 // Completion
 

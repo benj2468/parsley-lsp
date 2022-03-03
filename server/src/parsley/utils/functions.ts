@@ -1,7 +1,8 @@
 import { Position, Range } from "vscode-languageserver";
 
-export type Imports = {
-  [key: string]: Range;
+export type Import = {
+  fileName: string;
+  range: Range;
 };
 
 export const GHOST_RANGE: Range = {
@@ -33,12 +34,12 @@ export function positionInRange(position: Position, range: Range): boolean {
   return true;
 }
 
-export function parseImports(text: string, lineBase = 0): Imports {
-  const res: Imports = {};
+export function parseImports(text: string, lineBase = 0): Import[] {
+  const res: Import[] = [];
 
   text.split("\n").forEach((lineText, line) => {
     if (lineText.startsWith("use ")) {
-      const importIdent = lineText.split("use ")[1];
+      const fileName = lineText.split("use ")[1];
       const range: Range = {
         start: {
           line: line + lineBase,
@@ -49,8 +50,60 @@ export function parseImports(text: string, lineBase = 0): Imports {
           character: lineText.length,
         },
       };
-      res[importIdent] = range;
+      res.push({ fileName, range });
     }
+  });
+
+  return res;
+}
+
+export type NonTerminal = {
+  ident: string;
+  uri: string;
+  range: Range;
+};
+
+export function didSelect(
+  line: string,
+  text: string,
+  position: Position
+): boolean {
+  const idx = line.indexOf(text);
+  console.log(
+    line,
+    text,
+    idx,
+    position.character,
+    idx <= position.character,
+    idx + text.length >= position.character
+  );
+  return idx <= position.character && idx + text.length >= position.character;
+}
+
+export function parseNonTerminals(
+  files: { [x: string]: string },
+  lineBase = 0
+): NonTerminal[] {
+  const res: NonTerminal[] = [];
+
+  Object.entries(files).forEach(([uri, text]) => {
+    text.split("\n").forEach((lineText, line) => {
+      if (lineText.trim().match(/^[A-Z]\w*/)) {
+        const ident = lineText.trim().split(" ")[0];
+        const character = lineText.indexOf(ident);
+        const range: Range = {
+          start: {
+            line: line + lineBase,
+            character,
+          },
+          end: {
+            line: line + lineBase,
+            character: character + ident.length,
+          },
+        };
+        res.push({ ident, uri, range });
+      }
+    });
   });
 
   return res;

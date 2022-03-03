@@ -3,6 +3,7 @@ import * as url from "url";
 import * as path from "path";
 import { Diagnostic, Position, _Connection } from "vscode-languageserver";
 import * as utils from "../utils";
+import { GHOST_RANGE } from "../utils";
 
 type ErrLocation = {
   fname: string;
@@ -40,7 +41,7 @@ function convertToPosition(errLocation: ErrLocation): Position {
 
 function parseParsleyResponse(
   file: string,
-  imports: utils.Imports,
+  imports: utils.Import[],
   response: string
 ): Diagnostic | undefined {
   const data = response.split("\n")[1];
@@ -54,7 +55,9 @@ function parseParsleyResponse(
 
       return {
         message: `Error in file: ${errm_start.fname} : ${errm_reason}`,
-        range: imports[file.name],
+        range:
+          imports.find(({ fileName }) => file.name == fileName)!.range ||
+          GHOST_RANGE,
       };
     }
 
