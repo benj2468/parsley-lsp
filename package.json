@@ -37,25 +37,14 @@
 			}
 		],
 		"configuration": {
-			"type": "object",
-			"title": "Example configuration",
+			"type": "Parsley",
+			"title": "Path of Parsley Compiler",
 			"properties": {
-				"languageServerExample.maxNumberOfProblems": {
-					"scope": "resource",
-					"type": "number",
-					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
-				},
-				"languageServerExample.trace.server": {
-					"scope": "window",
+				"parsley.path": {
+					"scope": "application",
 					"type": "string",
-					"enum": [
-						"off",
-						"messages",
-						"verbose"
-					],
-					"default": "off",
-					"description": "Traces the communication between VS Code and the language server."
+					"default": "parsleyc.exe",
+					"description": "Used to call the type checker."
 				}
 			}
 		}

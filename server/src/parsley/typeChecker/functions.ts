@@ -1,9 +1,15 @@
 import * as child from "child_process";
 import * as url from "url";
 import * as path from "path";
-import { Diagnostic, Position, _Connection } from "vscode-languageserver";
+import {
+  Diagnostic,
+  DiagnosticSeverity,
+  Position,
+  _Connection,
+} from "vscode-languageserver";
 import * as utils from "../utils";
 import { GHOST_RANGE } from "../utils";
+import { Settings } from "../../types";
 
 type ErrLocation = {
   fname: string;
@@ -20,12 +26,18 @@ type ErrMessage = {
 };
 
 async function executeTypeChecker(
+  settings: Settings,
   filename: string
 ): Promise<string | undefined> {
+  const { path } = settings;
   return new Promise((resolve, reject) => {
-    child.exec(`parsleyc.exe -json ${filename}`, (err, data) => {
-      if (err) {
+    console.log(path);
+    child.exec(`${path} -json ${filename}`, (err, data) => {
+      if (err?.code == 1) {
         resolve(err.message);
+      }
+      if (err?.code == 127) {
+        reject(err.message);
       }
       resolve(undefined);
     });
@@ -58,6 +70,7 @@ function parseParsleyResponse(
         range:
           imports.find(({ fileName }) => file.name == fileName)!.range ||
           GHOST_RANGE,
+        severity: DiagnosticSeverity.Error,
       };
     }
 
@@ -69,11 +82,15 @@ function parseParsleyResponse(
             start: convertToPosition(errm_start),
             end: convertToPosition(errm_end),
           },
+          severity: DiagnosticSeverity.Error,
         };
   }
 }
 
-export function validateTextDocument(connection: _Connection) {
+export function validateTextDocument(
+  connection: _Connection,
+  settings: Settings
+) {
   return (uri: string, text: string) => {
     const file = url.parse(uri).pathname;
     const diagnostics: Diagnostic[] = [];
@@ -81,16 +98,29 @@ export function validateTextDocument(connection: _Connection) {
     const imports = utils.parseImports(text);
 
     if (file) {
-      executeTypeChecker(file).then((result) => {
-        if (result) {
-          const diagnostic = parseParsleyResponse(file, imports, result);
+      executeTypeChecker(settings, file)
+        .then((result) => {
+          if (result) {
+            const diagnostic = parseParsleyResponse(file, imports, result);
 
-          if (diagnostic) {
-            diagnostics.push(diagnostic);
+            if (diagnostic) {
+              diagnostics.push(diagnostic);
+            }
           }
-        }
-        connection.sendDiagnostics({ uri, diagnostics });
-      });
+          connection.sendDiagnostics({ uri, diagnostics });
+        })
+        .catch((err) => {
+          connection.sendDiagnostics({
+            uri,
+            diagnostics: [
+              {
+                message: err,
+                range: GHOST_RANGE,
+                severity: DiagnosticSeverity.Error,
+              },
+            ],
+          });
+        });
     }
   };
 }

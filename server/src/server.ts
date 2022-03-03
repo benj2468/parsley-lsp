@@ -14,6 +14,7 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import * as parsley from "./parsley";
+import { Settings } from "./types";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -78,38 +79,49 @@ connection.onInitialized(() => {
   }
 });
 
-// The example settings
-interface ExampleSettings {
-  maxNumberOfProblems: number;
-}
-
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 };
-let globalSettings: ExampleSettings = defaultSettings;
+const defaultSettings: Settings = { path: "parsleyc.exe" };
+let globalSettings: Settings = defaultSettings;
 
 // Cache the settings of all open documents
-const documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
+const documentSettings: Map<string, Thenable<Settings>> = new Map();
 
 connection.onDidChangeConfiguration((change) => {
   if (hasConfigurationCapability) {
     // Reset all cached document settings
     documentSettings.clear();
   } else {
-    globalSettings = <ExampleSettings>(
-      (change.settings.languageServerExample || defaultSettings)
-    );
+    console.log(change.settings);
+    globalSettings = <Settings>(change.settings || defaultSettings);
   }
 
   // Revalidate all open text documents
-  documents.all().forEach((doc) => {
-    parsley.typeChecker.validateTextDocument(connection)(
+  documents.all().forEach(async (doc) => {
+    const settings = await getDocumentSettings(doc.uri);
+
+    parsley.typeChecker.validateTextDocument(connection, settings)(
       doc.uri,
       doc.getText()
     );
   });
 });
+
+function getDocumentSettings(resource: string): Thenable<Settings> {
+  if (!hasConfigurationCapability) {
+    return Promise.resolve(globalSettings);
+  }
+  let result = documentSettings.get(resource);
+  if (!result) {
+    result = connection.workspace.getConfiguration({
+      scopeUri: resource,
+      section: "parsley",
+    });
+    documentSettings.set(resource, result);
+  }
+  return result;
+}
 
 // Only keep settings for open documents
 documents.onDidClose((e) => {
@@ -117,14 +129,17 @@ documents.onDidClose((e) => {
 });
 
 documents.onDidSave(async (change) => {
-  parsley.typeChecker.validateTextDocument(connection)(
+  const settings = await getDocumentSettings(change.document.uri);
+  parsley.typeChecker.validateTextDocument(connection, settings)(
     change.document.uri,
     change.document.getText()
   );
 });
 
-documents.onDidChangeContent((change) => {
-  parsley.typeChecker.validateTextDocument(connection)(
+documents.onDidChangeContent(async (change) => {
+  const settings = await getDocumentSettings(change.document.uri);
+
+  parsley.typeChecker.validateTextDocument(connection, settings)(
     change.document.uri,
     change.document.getText()
   );
