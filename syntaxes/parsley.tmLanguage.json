@@ -44,28 +44,8 @@
 					"match": "\\bformat\\b"
 				},
 				{
-					"match": "[\\s]+(\\[)(.*)(\\])",
-					"captures": {
-						"1": {
-							"name": "invalid"
-						},
-						"2": {
-							"patterns": [
-								{
-									"include": "#constants"
-								},
-								{
-									"include": "#variables"
-								},
-								{
-									"include": "#nonterminals"
-								}
-							]
-						},
-						"3": {
-							"name": "invalid"
-						}
-					}
+					"match": "\\[|\\]",
+					"name": "invalid"
 				}
 			]
 		},
