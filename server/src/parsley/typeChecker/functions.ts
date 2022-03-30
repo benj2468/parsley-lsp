@@ -8,30 +8,18 @@ import {
   _Connection,
 } from "vscode-languageserver";
 import * as utils from "../utils";
-import { GHOST_RANGE } from "../utils";
+import { GHOST_RANGE } from "../utils/constants";
 import { Settings } from "../../types";
+import { ErrLocation, ErrMessage } from "./types";
+import { Import } from "../utils/types";
 
-type ErrLocation = {
-  fname: string;
-  lnum: number;
-  bol: number;
-  cnum: number;
-};
-
-type ErrMessage = {
-  errm_start: ErrLocation;
-  errm_end: ErrLocation;
-  errm_ghost: boolean;
-  errm_reason: string;
-};
-
+// Executes the type checker for parsley
 async function executeTypeChecker(
   settings: Settings,
   filename: string
 ): Promise<string | undefined> {
   const { path } = settings;
   return new Promise((resolve, reject) => {
-    console.log(path);
     child.exec(`${path} -json ${filename}`, (err, data) => {
       if (err?.code == 1) {
         resolve(err.message);
@@ -44,6 +32,7 @@ async function executeTypeChecker(
   });
 }
 
+// Converts the error location to a position
 function convertToPosition(errLocation: ErrLocation): Position {
   return {
     character: errLocation.cnum - errLocation.bol,
@@ -51,9 +40,10 @@ function convertToPosition(errLocation: ErrLocation): Position {
   };
 }
 
+// Parses the error message and returns a diagnostic
 function parseParsleyResponse(
   file: string,
-  imports: utils.Import[],
+  imports: Import[],
   response: string
 ): Diagnostic | undefined {
   const data = response.split("\n")[1];
@@ -75,7 +65,7 @@ function parseParsleyResponse(
     }
 
     return errm_ghost
-      ? { message: errm_reason, range: utils.GHOST_RANGE }
+      ? { message: errm_reason, range: GHOST_RANGE }
       : {
           message: errm_reason,
           range: {
@@ -87,6 +77,8 @@ function parseParsleyResponse(
   }
 }
 
+// Main validator for parsley. This function is called by the server on file change.
+// It sends diagnostics back to the client over the connection.
 export function validateTextDocument(
   connection: _Connection,
   settings: Settings

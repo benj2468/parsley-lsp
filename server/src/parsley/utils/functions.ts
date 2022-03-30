@@ -1,45 +1,39 @@
 import { Position, Range } from "vscode-languageserver";
+import { IMPORT_PREFIX } from "./constants";
+import { Import, NonTerminal } from "./types";
 
-export type Import = {
-  fileName: string;
-  range: Range;
-};
-
-export const GHOST_RANGE: Range = {
-  start: {
-    character: 0,
-    line: 0,
-  },
-  end: {
-    character: 1,
-    line: 0,
-  },
-};
-
+// Checks if a position is inside a range
 export function positionInRange(position: Position, range: Range): boolean {
-  if (position.line < range.start.line || position.line > range.end.line)
-    return false;
-
-  if (
-    position.character < range.start.character &&
-    range.start.line == position.line
-  )
-    return false;
-  if (
-    position.character > range.end.character &&
-    range.end.line == position.line
-  )
-    return false;
-
-  return true;
+  return (
+    !positionAfterRange(position, range) &&
+    !positionBeforeRange(position, range)
+  );
 }
 
+// Checks if a position is after a range
+export function positionAfterRange(position: Position, range: Range): boolean {
+  return (
+    range.end.line < position.line ||
+    (range.end.line == position.line &&
+      range.end.character < position.character)
+  );
+}
+
+export function positionBeforeRange(position: Position, range: Range): boolean {
+  return (
+    range.start.line > position.line ||
+    (range.start.line == position.line &&
+      range.start.character > position.character)
+  );
+}
+
+// Parses a string and returns a list of imports that are in that string.
 export function parseImports(text: string, lineBase = 0): Import[] {
   const res: Import[] = [];
 
   text.split("\n").forEach((lineText, line) => {
-    if (lineText.startsWith("use ")) {
-      const fileName = lineText.split("use ")[1];
+    if (lineText.startsWith(IMPORT_PREFIX)) {
+      const fileName = lineText.split(IMPORT_PREFIX)[1];
       const range: Range = {
         start: {
           line: line + lineBase,
@@ -57,30 +51,20 @@ export function parseImports(text: string, lineBase = 0): Import[] {
   return res;
 }
 
-export type NonTerminal = {
-  ident: string;
-  uri: string;
-  range: Range;
-};
-
+// Checks whether the user selected the specific text in the line, given the position they clicked
 export function didSelect(
   line: string,
   text: string,
   position: Position
 ): boolean {
   const idx = line.indexOf(text);
-  console.log(
-    line,
-    text,
-    idx,
-    position.character,
-    idx <= position.character,
-    idx + text.length >= position.character
-  );
+
   return idx <= position.character && idx + text.length >= position.character;
 }
 
+// Parses the non terminals in a set of files
 export function parseNonTerminals(
+  // Maps file uri to the text of the file
   files: { [x: string]: string },
   lineBase = 0
 ): NonTerminal[] {

@@ -4,8 +4,10 @@
 
 This Language Server works for parsley files. It has the following language features:
 
-- Diagnostics regenerated on each file change or configuration change
+- Diagnostics, regenerated on each file change (save)
 - Linking to external files
+- Syntax highlighting for better development experience
+- Code Completion for NonTerminals, both those in standard library, and those defined by the user
 
 ## Structure
 
@@ -33,6 +35,6 @@ This Language Server works for parsley files. It has the following language feat
 - In the [Extension Development Host] instance of VSCode, open a parsley document, potentially one of the examples from the [parsley](https://github.com/SRI-CSL/parsley-lang) repo.
 - Make an error in the file and see the output error message
 
-## Architect
+## Contributor
 
 Benjamin Cape '22

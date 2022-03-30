@@ -2,39 +2,31 @@ import {
   CompletionItemKind,
   TextDocumentPositionParams,
 } from "vscode-languageserver";
+import { utils } from "..";
+import { GlobalState } from "../../types";
+import { STD_NON_TERMINALS } from "./constants";
 import { CompletionItem, CompletionType } from "./types";
 
-export function completionOptions(
-  _textDocumentPosition: TextDocumentPositionParams
-): CompletionItem[] {
-  // The pass parameter contains the position of the text document in
-  // which code complete got requested. For the example we ignore this
-  // info and always provide the same completion items.
-  return [
-    {
-      label: "TypeScript",
-      kind: CompletionItemKind.Text,
-      data: {
-        type: CompletionType.Ident,
-      },
-    },
-    {
-      label: "JavaScript",
-      kind: CompletionItemKind.Text,
-      data: {
-        type: CompletionType.Other,
-      },
-    },
-  ];
-}
+// Defines the completion options, must be called each time as it depends on the global state (non-terminals defined byt the user)
+export const completionOptions =
+  (globalState: GlobalState) =>
+  ({ position }: TextDocumentPositionParams): CompletionItem[] => {
+    const { nonTerminals } = globalState;
 
-export function completionResolve(item: CompletionItem): CompletionItem {
-  if (item.data?.type === CompletionType.Ident) {
-    item.detail = "TypeScript details";
-    item.documentation = "TypeScript documentation";
-  } else if (item.data?.type === CompletionType.Other) {
-    item.detail = "JavaScript details";
-    item.documentation = "JavaScript documentation";
-  }
+    return nonTerminals
+      .filter(({ range }) => utils.positionAfterRange(position, range))
+      .map(({ ident }) => ({
+        label: ident,
+        kind: CompletionItemKind.Constructor,
+      }))
+      .concat(
+        STD_NON_TERMINALS.map((ident) => ({
+          label: ident,
+          kind: CompletionItemKind.Constructor,
+        }))
+      );
+  };
+// Resolves the completion item, not sure why we need this...
+export const completionResolve = (item: CompletionItem): CompletionItem => {
   return item;
-}
+};

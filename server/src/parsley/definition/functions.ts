@@ -2,13 +2,36 @@ import {
   Location,
   DefinitionParams,
   TextDocuments,
+  TextDocumentIdentifier,
 } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import * as path from "path";
 import * as utils from "../utils";
-import { GHOST_RANGE } from "../utils";
+import { GHOST_RANGE } from "../utils/constants";
 import * as fs from "fs";
 
+// Helper to build all the files and get their texts
+export function buildAllFiles(
+  documents: TextDocuments<TextDocument>,
+  currentDoc: TextDocumentIdentifier
+): { [x: string]: string } {
+  const doc = documents.get(currentDoc.uri);
+  if (!doc) {
+    return {};
+  }
+
+  return utils.parseImports(doc.getText()).reduce(
+    (res, { fileName }) => {
+      const uri = path.join(path.dirname(currentDoc.uri), `${fileName}.ply`);
+      const doc = fs.readFileSync(uri.slice(5), "utf8");
+      res[uri] = doc;
+      return res;
+    },
+    { [doc.uri]: doc.getText() }
+  );
+}
+
+// Main handler for definition requests
 export function handler(documents: TextDocuments<TextDocument>) {
   return ({ textDocument, position }: DefinitionParams): Location[] => {
     const doc = documents.get(textDocument.uri);
@@ -43,18 +66,7 @@ export function handler(documents: TextDocuments<TextDocument>) {
         });
       });
 
-    const files = utils.parseImports(doc.getText()).reduce(
-      (res, { fileName }) => {
-        const uri = path.join(
-          path.dirname(textDocument.uri),
-          `${fileName}.ply`
-        );
-        const doc = fs.readFileSync(uri.slice(5), "utf8");
-        res[uri] = doc;
-        return res;
-      },
-      { [doc.uri]: doc.getText() }
-    );
+    const files = buildAllFiles(documents, textDocument);
 
     utils
       .parseNonTerminals(files)

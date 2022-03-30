@@ -14,7 +14,9 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import * as parsley from "./parsley";
-import { Settings } from "./types";
+import { Settings, GlobalState } from "./types";
+import { parseNonTerminals } from "./parsley/utils";
+import { buildAllFiles } from "./parsley/definition";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -25,7 +27,8 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
-let hasDiagnosticRelatedInformationCapability = false;
+
+const globalState: GlobalState = { nonTerminals: [] };
 
 connection.onInitialize((params: InitializeParams) => {
   const capabilities = params.capabilities;
@@ -37,11 +40,6 @@ connection.onInitialize((params: InitializeParams) => {
   );
   hasWorkspaceFolderCapability = !!(
     capabilities.workspace && !!capabilities.workspace.workspaceFolders
-  );
-  hasDiagnosticRelatedInformationCapability = !!(
-    capabilities.textDocument &&
-    capabilities.textDocument.publishDiagnostics &&
-    capabilities.textDocument.publishDiagnostics.relatedInformation
   );
 
   const result: InitializeResult = {
@@ -136,12 +134,9 @@ documents.onDidSave(async (change) => {
   );
 });
 
-documents.onDidChangeContent(async (change) => {
-  const settings = await getDocumentSettings(change.document.uri);
-
-  parsley.typeChecker.validateTextDocument(connection, settings)(
-    change.document.uri,
-    change.document.getText()
+documents.onDidChangeContent((change) => {
+  globalState.nonTerminals = parseNonTerminals(
+    buildAllFiles(documents, change.document)
   );
 });
 
@@ -154,7 +149,7 @@ connection.onDefinition(parsley.definition.handler(documents));
 
 // Completion
 
-connection.onCompletion(parsley.codeCompletion.completionOptions);
+connection.onCompletion(parsley.codeCompletion.completionOptions(globalState));
 connection.onCompletionResolve(parsley.codeCompletion.completionResolve);
 
 // Make the text document manager listen on the connection
