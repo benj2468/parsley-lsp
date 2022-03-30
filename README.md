@@ -35,6 +35,8 @@ This Language Server works for parsley files. It has the following language feat
 - In the [Extension Development Host] instance of VSCode, open a parsley document, potentially one of the examples from the [parsley](https://github.com/SRI-CSL/parsley-lang) repo.
 - Make an error in the file and see the output error message
 
+Make sure that you set the location for your `parsleyc` executable as an option in the extension when you run it! The settings is named: `parsley.path`. So adding that to your vscode `.vscode/settings.json` should suffice.
+
 ## Contributor
 
 Benjamin Cape '22
