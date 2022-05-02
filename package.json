@@ -1,12 +1,12 @@
 {
 	"name": "parsley-lsp",
-	"description": "A language server for Parsley",
+	"description": "A VSCode Language Server for Parsley",
 	"author": "Benjamin Cape",
 	"license": "MIT",
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/##"
+		"url": "https://github.com/benj2468/parsley-lsp"
 	},
 	"categories": [],
 	"keywords": [
@@ -53,9 +53,7 @@
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
-		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-		"test": "sh ./scripts/e2e.sh"
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
 	},
 	"devDependencies": {
 		"@types/mocha": "^8.2.2",
