@@ -8,9 +8,9 @@ First clone this repository! If you don't have VSCode you'll also need to instal
 
 To being development you will need `node` installed. The preferred way to install is through homebrew.
 
-Then, install all the local packages for the server, under the `/server` directory.
+Then, install all the local packages for the server, under the `/server` directory. This is done by running `npm i` in the `/server` directory.
 
-You should also installed the dependencies in the `/client` directory.
+Similarly, run `npm i` in the `/client` directory to install the dependencies there.
 
 Then, you can start playing around! Most of the logic can be found in the `server/src/parsley`. Each sub-directory from there should be relatively clear as to what it contains, i.e. `typeChecker`, `codeCompletion`, `definition`.
 
